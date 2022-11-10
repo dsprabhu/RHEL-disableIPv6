@@ -1,0 +1,1 @@
+# RHEL-disableIPv6
