@@ -1,0 +1,33 @@
+---
+# file: disable_ipv6.yml
+- name: Disable IPv6
+  hosts: all
+  become: true
+  become_user: root
+  tasks
+    - name: Added ipv6.disable to /etc/default/grub
+  become: true
+  lineinfile:
+    backup: yes
+    path: /etc/default/grub
+    backrefs: yes
+    regexp: '^(GRUB_CMDLINE_LINUX=(?!.*ipv6.disable)\"[^\"]+)(\".*)'
+    line: '\1 ipv6.disable=1\2'
+    state: present
+  register: grub_updated
+
+- name: Update Grub
+  become: true
+  command: "grub2-mkconfig -o /boot/grub2/grub.cfg"
+  register: grub_build
+  failed_when: grub_build.rc != 0
+  when: grub_updated.changed
+
+
+- name: Update /etc/hosts to remove ipv6 lines
+  become: true
+  lineinfile:
+    path: /etc/hosts
+    regexp: "^::1.*$"
+    state: absent
+    backup: yes
